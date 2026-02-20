@@ -1,0 +1,3036 @@
+<!DOCTYPE html>
+<html lang="pt-br">  <head>
+    <meta charset="UTF-8">  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="icone.png" type="image/png">
+    <title>Dashboard do Elias</title> <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@2.1.0/src/wordcloud2.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
+    <style>
+        
+        :root {
+            --sidebar-width-desktop: 260px;
+            --header-height-mobile: 60px;
+            
+            --color-primary: #2563eb; /* Azul profissional */
+            --color-primary-light: #dbeafe;
+            --color-text-primary: #111827; /* Grafite escuro */
+            --color-text-secondary: #4b5563;
+            --color-text-on-primary: #ffffff;
+            
+            --bg-body: #f3f4f6; /* Fundo do app (cinza claro) */
+            --bg-sidebar: #ffffff;
+            --bg-content: #ffffff;
+            --border-color: #e5e7eb; /* Cor da borda sutil */
+            
+            --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --card-radius: 0.75rem; /* 12px */
+        }
+
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--color-text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 0.5rem; /* 8px */
+        }
+        
+        p {
+            line-height: 1.6;
+            color: var(--color-text-secondary);
+        }
+        
+        h2, h3, h4 {
+            font-weight: 600;
+        }
+
+        /* --- Layout Principal (Sidebar + Conteúdo) --- */
+        .app-layout {
+            display: flex;
+            flex-direction: column; /* Mobile-first: empilhado */
+        }
+
+        /* --- Sidebar (Navegação) --- */
+        .sidebar {
+            width: 100%;
+            background-color: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.5rem;
+            
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .sidebar-header { display: none; }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: row; 
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; 
+        }
+        
+        .sidebar-nav::-webkit-scrollbar { display: none; }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem; 
+            font-size: 0.9rem; 
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            border-radius: 0.5rem; 
+            transition: background-color 0.2s, color 0.2s;
+            cursor: pointer;
+            white-space: nowrap; 
+            flex-shrink: 0; 
+        }
+        
+        .nav-item:hover {
+            background-color: var(--bg-body);
+            color: var(--color-text-primary);
+        }
+
+        .nav-item.active {
+            background-color: var(--color-primary-light);
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .nav-item-icon {
+            width: 1.25rem; 
+            height: 1.25rem; 
+            margin-right: 0.75rem; 
+            flex-shrink: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-item-icon { display: none; }
+            .nav-item {
+                justify-content: center;
+                flex-grow: 1;
+            }
+        }
+
+        /* --- Área de Conteúdo Principal --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 1.5rem; 
+            width: 100%;
+        }
+        
+               
+        .tab-content { display: none; }
+
+        /* --- Layout de Grid de Cards --- */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem; 
+        }
+        
+        .card {
+            background-color: var(--bg-content);
+            border-radius: var(--card-radius);
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            overflow: hidden; 
+        }
+        
+        .card.full-width { grid-column: 1 / -1; }
+
+        .card-header {
+            padding: 1rem 1.5rem; 
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .card-header h3 { font-size: 0.9rem; }
+
+        .card-body { padding: 1.5rem; }
+        
+        .card-body h4 {
+            font-size: 0.7rem; 
+            font-weight: 600;
+            margin-top: 1.25rem; 
+            margin-bottom: 0.5rem; 
+        }
+        
+        .card-body p { margin-bottom: 1rem; }
+        
+        
+        .chart-container, .chart-container-radar {
+            position: relative;
+            height: 340px;
+            width: 100%;
+            padding: 0.5rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+     
+               
+        .accordion-item {
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem; 
+            margin-bottom: 1rem;
+            background-color: #fafafa;
+        }
+        
+        .accordion-item[open] {
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+        }
+
+        .accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem; 
+            font-size: 1rem; 
+            font-weight: 600;
+            cursor: pointer;
+            list-style: none; 
+        }
+        
+        .accordion-header::-webkit-details-marker { display: none; }
+        
+        .accordion-header::after {
+            content: '+';
+            font-size: 1.5rem; 
+            font-weight: 400;
+            color: var(--color-text-secondary);
+            transform: rotate(0);
+            transition: transform 0.2s ease;
+        }
+        
+        .accordion-item[open] > .accordion-header::after {
+            content: '−';
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            padding: 1.5rem; 
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-content);
+        }
+        
+        .accordion-plataforma > .accordion-header {
+            background-color: #f9f9f9;
+            font-size: 1.1rem;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            margin-top: 2rem;
+            padding: 2rem 1.5rem; 
+            background-color: var(--bg-content);
+            border-top: 1px solid var(--border-color);
+            color: var(--color-text-secondary);
+            font-size: 0.875rem; 
+            
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .footer-info p { margin: 0.25rem 0; }
+        .footer-info .cargo { font-style: italic; }
+
+        .footer-links a {
+            color: var(--color-text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0 0.5rem;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: var(--color-primary); }
+
+        
+        .lightbox-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); /* Fundo escuro */
+            
+            /* O "embaçado" que você pediu */
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px); /* Suporte para Safari */
+            
+            z-index: 10000;
+            display: flex; /* Centraliza a imagem */
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            
+            /* Animação suave */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .lightbox-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .lightbox-image {
+            max-width: 90%;
+            max-height: 90vh; /* Limita a altura a 90% da tela */
+            object-fit: contain; /* Garante que a imagem caiba sem distorcer */
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 3rem; /* 48px */
+            font-weight: 300;
+            color: #ffffff;
+            cursor: pointer;
+            line-height: 1;
+            transition: opacity 0.2s;
+        }
+        
+        .lightbox-close:hover {
+            opacity: 0.8;
+        }
+        
+        /* Adiciona o cursor de "zoom" às imagens clicáveis */
+        .card-body img,
+        .tab-content > img { /* Pega imagens no card e também as de fora */
+            cursor: zoom-in;
+            transition: transform 0.2s ease;
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .card-body img[src$=".gif"],
+        .tab-content > img[src$=".gif"] {
+            cursor: default;
+        }
+        
+        .profile-banner {
+        /* Define uma altura fixa para o banner */
+        height: 220px; 
+        overflow: hidden;
+        background-color: #e5e7eb; /* Cor de fundo caso a imagem falhe */
+    }
+    
+    .profile-banner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Garante que a imagem cubra o espaço sem distorcer */
+        /* Ajusta o radius para bater com o card */
+        border-radius: var(--card-radius) var(--card-radius) 0 0;
+    }
+
+    .profile-card-body {
+        /* Posição relativa para "ancorar" a foto de perfil */
+        position: relative;
+        /* Damos um padding maior no topo para o nome não ficar colado na foto */
+        padding-top: 5rem; /* 80px */
+    }
+
+    .profile-pic {
+    width: 120px;
+    height: 120px;
+    aspect-ratio: 1 / 1;   /* 🔥 garante círculo perfeito */
+    border-radius: 50%;
+    object-fit: cover;
+
+    border: 5px solid var(--bg-content);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
+    position: absolute;
+    top: -60px;
+    left: 1.5rem;
+
+    max-width: none;       /* ⛔ cancela regra global */
+    height: 120px;         /* ⛔ força altura fixa */
+}
+
+    
+    .profile-name {
+        font-size: 1.75rem; /* 28px - Nome com mais destaque */
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin-bottom: 1rem; /* Espaço antes do texto de introdução */
+        line-height: 1.2;
+    }
+
+    /* Ajuste para o lightbox não aplicar zoom na foto de perfil */
+    .profile-pic {
+        cursor: default;
+    }
+
+    /* --- FIM: NOVOS ESTILOS DO CARD DE PERFIL --- */
+
+    
+    /* --- INÍCIO: Estilos do Novo Botão de Compartilhar --- */
+    .share-button {
+        display: flex; /* Padrão (visível no mobile) */
+        align-items: center;
+        justify-content: center;
+        
+        width: 44px;  /* Tamanho bom para toque */
+        height: 44px;
+        border-radius: 50%; /* Circular */
+        
+        background-color: var(--bg-content);
+        border: 1px solid var(--border-color);
+        color: var(--color-text-secondary); /* Cor sutil */
+        
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .share-button:hover {
+        background-color: var(--bg-body);
+        color: var(--color-primary); /* Destaca ao passar o mouse */
+    }
+
+    share-button i {
+            font-size: 1.25rem; /* 20px - Tamanho do ícone */
+            line-height: 1; /* Alinhamento */
+        }
+    /* --- FIM: Estilos do Botão de Compartilhar --- */
+    
+
+    /* --- Layout Desktop (min-width: 1024px) --- */
+    @media (min-width: 1024px) {
+        .app-layout {
+            flex-direction: row; /* Lado a lado */
+        }
+
+        .sidebar {
+            width: var(--sidebar-width-desktop);
+            height: 100vh; 
+            position: fixed; 
+            top: 0;
+            left: 0;
+            border-bottom: none;
+            border-right: 1px solid var(--border-color);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            display: block;
+            font-size: 1.5rem; 
+            font-weight: 700;
+            padding: 1rem 0.5rem 1.5rem 0.5rem;
+            color: var(--color-text-primary);
+        }
+
+        .sidebar-nav {
+            flex-direction: column; 
+            overflow-x: hidden;
+            overflow-y: auto;
+            flex-grow: 1; 
+        }
+
+        .nav-item {
+            font-size: 0.95rem; 
+            padding: 0.8rem 1rem; 
+            margin-bottom: 0.25rem;
+        }
+        
+        .nav-item-icon { display: block; }
+
+        /* ATUALIZAÇÃO AQUI (Flexbox) */
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start; /* Alinha os itens ao topo */
+        }
+        .main-header h2 { font-size: 1.8rem; }
+        .main-header p {
+            font-size: 1rem; 
+            color: var(--color-text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .main-content {
+    margin-left: 260px; /* Garante que o conteúdo não fique sob o menu */
+    padding: 40px;
+    width: calc(100% - 260px); /* Ajusta a largura para não criar barra de rolagem horizontal */
+    transition: all 0.3s;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 10px;
+    }
+}
+        
+        .footer {
+            flex-direction: row;
+            justify-content: space-between;
+            text-align: left;
+        }
+        
+        /* NOVO: Esconde o botão de compartilhar no desktop */
+        .share-button {
+            display: none;
+        }
+    }
+
+/* --- Destaque visual para o gráfico principal da aba de conteúdo --- */
+.destaque-grafico {
+    border: 1px solid var(--color-primary-light);
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.08);
+    transform: scale(1.01);
+    transition: all 0.3s ease;
+}
+
+.destaque-grafico:hover {
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12);
+    transform: scale(1.015);
+}
+
+.destaque-grafico .card-header h3 {
+    color: var(--color-primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.destaque-grafico .chart-container,
+.destaque-grafico .chart-container-radar {
+    height: 400px; /* Maior destaque visual */
+}
+
+/* --- FIM: Correção do Tamanho do Gráfico RADAR --- */
+
+#graficoDispersaoComentarios {
+    margin-top: 10px;
+}
+.chart-container {
+    height: 360px;
+}
+
+/* === Grid para imagens de categorias === */
+.img-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Cada item individual */
+.img-item {
+  flex: 1;
+  text-align: center;
+}
+
+/* Imagens com a mesma largura e estilo dos gráficos */
+.img-item img {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  background: #fff;
+  transition: transform 0.3s ease;
+}
+
+.img-item img:hover {
+  transform: scale(1.02);
+}
+
+/* Layout lado a lado em telas grandes */
+@media (min-width: 992px) {
+  .img-grid {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .img-item {
+    max-width: 32%;
+  }
+}
+
+/* --- INÍCIO: Estilo do Indicador do Radar --- */
+.indicator {
+    position: absolute;
+    top: 1rem; /* 16px */
+    right: 1.25rem; /* 20px */
+    z-index: 10; /* Garante que fique sobre o gráfico */
+    
+    font-size: 1rem; /* 16px */
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    
+    background: rgba(255, 255, 255, 0.7); /* Fundo branco semitransparente */
+    backdrop-filter: blur(4px); /* Efeito de vidro fosco */
+    -webkit-backdrop-filter: blur(4px);
+    
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem; /* 8px */
+    padding: 0.25rem 0.65rem; /* Espaçamento interno */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+/* --- FIM: Estilo do Indicador do Radar --- */
+
+.categoria-grupo { margin-bottom: 3rem; }
+.categoria-titulo-slug {
+    font-size: 1.25rem;
+    color: var(--color-primary);
+    border-bottom: 2px solid var(--color-primary-light);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.tabela-dados {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+}
+.tabela-dados th {
+    text-align: left;
+    padding: 12px;
+    background: #f8fafc;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+.tabela-dados td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--color-text-primary);
+}
+.tabela-dados tr:hover { background: #f1f5f9; }
+.col-obs { font-style: italic; color: var(--color-text-secondary); font-size: 0.8rem; }
+.badge-comentarios {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+/* Link minimalista para o post */
+.btn-ver-post {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+}
+.btn-ver-post:hover {
+    text-decoration: underline;
+}
+
+/* Ajuste na largura das colunas para caber tudo */
+.tabela-dados th, .tabela-dados td {
+    padding: 10px 8px;
+}
+.col-obs-texto {
+    max-width: 200px; /* Limita o tamanho para não quebrar o layout */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+.col-obs-texto:hover {
+    white-space: normal; /* Mostra o texto todo ao passar o mouse */
+    cursor: help;
+}
+
+/* --- ESTILO DAS TABELAS E BOTÃO EXPANSÍVEL --- */
+
+/* 1. Container da Categoria: Removemos a altura fixa e o overflow */
+.categoria-grupo {
+    margin-bottom: 30px;
+}
+
+.categoria-container {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow: hidden; /* Garante que o botão e a tabela fiquem alinhados */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* 2. Regra principal: Esconde as linhas que excedem o limite inicial */
+.tabela-dados tr.linha-oculta {
+    display: none;
+}
+
+/* 3. Botão "Ver Mais" Minimalista */
+.btn-expandir {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: #f8fafc; /* Cor de fundo sutil */
+    border: none;
+    border-top: 1px solid var(--border-color);
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-expandir:hover {
+    background: #f1f5f9;
+    color: var(--color-primary-dark);
+}
+
+/* 4. Estilo do Link "Ver Post" */
+.btn-ver-post {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(37, 99, 235, 0.05); /* Azul bem clarinho */
+}
+
+.btn-ver-post:hover {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.col-obs {
+    max-width: 250px; /* Ajuste o tamanho conforme necessário */
+    font-size: 0.85em;
+    color: #666;
+    line-height: 1.4;
+    word-wrap: break-word; /* Garante que o texto quebre linha se for muito longo */
+}
+
+/* Opcional: ajustar a tabela para ocupar 100% e distribuir melhor as colunas */
+.tabela-dados {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Estilo do botão que abre a gaveta */
+.btn-gaveta {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #374151;
+    transition: all 0.2s;
+}
+
+.btn-gaveta:hover {
+    background: #e5e7eb;
+}
+
+/* Estilo da linha da gaveta */
+.linha-gaveta {
+    background-color: #fafafa; /* Cinza bem claro para diferenciar */
+}
+
+.gaveta-conteudo {
+    padding: 15px;
+    font-size: 13px;
+    color: #4b5563;
+    border-left: 4px solid #3b82f6; /* Detalhe azul lateral */
+    margin: 5px 0;
+    animation: slideDown 0.3s ease-out;
+}
+
+/* Animação suave para abrir */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+
+  /* Indicador visual sutil */
+  .tabela-scroll::after {
+    content: '';
+    display: block;
+    text-align: right;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-top: 6px;
+  }
+
+
+/* === Comentário sobre imagem === */
+.img-comentada {
+  position: relative;
+  cursor: pointer;
+}
+
+.img-comentario {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+
+  background: rgba(17, 24, 39, 0.85);
+  color: #fff;
+  font-size: 0.85rem;
+  line-height: 1.4;
+
+  padding: 12px 14px;
+  border-radius: 0 0 12px 12px;
+
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.25s ease;
+}
+
+/* Hover no desktop */
+.img-comentada:hover .img-comentario {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Mobile: mostrar ao tocar */
+@media (max-width: 768px) {
+  .img-comentada:active .img-comentario {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toggle-container {
+  align-self: center;   /* 👈 impede esticar */
+  display: inline-flex;
+  background: #f1f5f9;
+  border-radius: 999px;
+  padding: 6px;
+  margin-bottom: 16px;
+}
+
+.toggle-container button {
+  border: none;
+  background: transparent;
+  padding: 8px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.toggle-container button.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+}
+
+/* ===== PISM – TERMÔMETRO ===== */
+
+.pism-bar {
+  position: relative;
+  height: 14px;
+  width: 100%;
+  max-width: 600px;
+  margin: 30px auto 20px;
+  background: linear-gradient(
+    to right,
+    #e5e7eb,
+    #c7d2fe,
+    #93c5fd,
+    #60a5fa,
+    #2563eb
+  );
+  border-radius: 999px;
+}
+
+/* Marcadores */
+.pism-bar .marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #111827;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+}
+
+/* Daniel */
+.marker.daniel {
+  background: #2563eb;
+}
+
+/* Luisa */
+.marker.luisa {
+  background: #dc2626;
+}
+
+/* ===== PISM VERTICAL ===== */
+
+.pism-vertical-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 30px auto;
+  height: 260px;
+}
+
+/* Escala 0–1 */
+.pism-scale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* Barra neutra */
+.pism-bar-vertical {
+  position: relative;
+  width: 10px;
+  height: 100%;
+  background: linear-gradient(
+    to top,
+    #e5e7eb,
+    #d1d5db,
+    #9ca3af
+  );
+  border-radius: 999px;
+}
+
+/* Marcadores */
+.marker-vertical {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+}
+
+/* Daniel */
+.marker-vertical.daniel {
+  background: #2563eb;
+}
+
+/* Luisa */
+.marker-vertical.luisa {
+  background: #dc2626;
+}
+
+/* Valor numérico */
+.marker-vertical::after {
+  content: attr(data-value);
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.card-compare {
+  background: #f9fafb;
+  border: 1px dashed #e5e7eb;
+}
+
+/* --- Footer: perfil do autor --- */
+
+.footer-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.footer-avatar {
+    width: 36px;
+    height: 36px;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    object-fit: cover;
+
+    border: 2px solid var(--border-color);
+    background-color: #fff;
+}
+
+
+
+/* --- Footer: links minimalistas --- */
+
+.footer-link {
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+    color: var(--color-primary);
+}
+
+/* Nome levemente mais forte */
+.footer-name {
+    font-weight: 600;
+}
+
+
+/* --- Footer: ajuste mobile --- */
+@media (max-width: 768px) {
+    .footer-profile {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .footer-avatar {
+        margin-bottom: 0.5rem;
+    }
+
+    .footer-text {
+        align-items: center;
+    }
+}
+
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-profile {
+    display: flex;
+    flex-direction: column; /* 👈 FOTO EM CIMA */
+    align-items: center;
+    text-align: center;
+    gap: 0.6rem; /* espaço entre foto e texto */
+}
+
+
+.footer-text {
+    text-align: center;
+}
+
+
+.footer-avatar {
+    width: 72px;       /* ou o tamanho que você preferir */
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem; /* espaço entre blocos */
+}
+
+.footer-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.footer-text {
+    text-align: center;
+}
+
+.footer-links {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap; /* quebra linha no mobile */
+}
+
+.footer-links a {
+    text-decoration: none;
+    font-weight: 500;
+    color: inherit;
+}
+
+@media (max-width: 768px) {
+  body {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  h2 {
+    font-size: 1.0rem;
+  }
+
+  h3 {
+    font-size: 0.95rem;
+  }
+
+  h4 {
+    font-size: 0.65rem;
+  }
+}
+
+
+@media (max-width: 768px) {
+
+  /* Remove cabeçalho da tabela */
+  .tabela-dados thead {
+    display: none;
+  }
+
+  /* Cada linha vira um card */
+  .tabela-dados tr {
+    display: block;
+    margin-bottom: 14px;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px;
+  }
+
+  /* Cada célula vira linha vertical */
+  .tabela-dados td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 6px 0;
+    border: none;
+    font-size: 0.85rem;
+  }
+
+  /* Rótulo antes do valor (simula o th) */
+  .tabela-dados td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-right: 10px;
+    white-space: nowrap;
+  }
+}
+
+/* =========================================================
+   AJUSTE DE RECUO DAS LINHAS EXPANDIDAS (VER MAIS)
+   ========================================================= */
+
+/* Garante o mesmo espaçamento das linhas iniciais */
+.tabela-dados tr td {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Linhas reveladas pelo "Ver mais" */
+.tabela-dados tr.linha-oculta td {
+  padding-left: 8px;
+  padding-right: 18px;
+}
+
+.marker-vertical.offset-up {
+  transform: translate(-50%, 130%);
+}
+
+.marker-vertical.offset-down {
+  transform: translate(-50%, -30%);
+}
+
+
+    </style>
+</head>
+
+
+
+<body>
+
+    <div class="app-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                Elias Jabbour 🥇
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a class="nav-item active" data-target="Categoria0">
+                    <svg class="nav-item-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Início
+                </a>
+                <a class="nav-item" data-target="Categoria1">
+                    <svg class="nav-item-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25C3.504 21 3 20.496 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V4.125Z" /></svg>
+                    Análise de Conteúdo
+                </a>
+                <a class="nav-item" data-target="Categoria2">
+                    <svg class="nav-item-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9 9.75h.008v.008H9v-.008Zm6 0h.008v.008H15v-.008Z" /></svg>
+                    Análise de Sentimentos
+                </a>
+                <a class="nav-item" data-target="Categoria3">
+                    <svg class="nav-item-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 11.25-7.5 7.5-7.5-7.5m15 4.5-7.5 7.5-7.5-7.5" /></svg>
+                    Radar da Liderança
+                </a>
+                <a class="nav-item" data-target="Categoria4">
+                    <svg class="nav-item-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    Avaliação Técnica
+                </a>
+            </nav>
+        </aside>
+
+
+
+        <main class="main-content">
+            
+            <header class="main-header">
+                <div class="main-header-text">
+                    <h2>Janeiro de 2026</h2>
+                    <p>Análise de comportamento político nas mídias sociais</p>
+                </div>
+                
+                <button class="share-button" id="mobileShareBtn" aria-label="Compartilhar">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+            </header>
+
+
+
+            <section id="Categoria0" class="tab-content" style="display: block;">
+                <div class="card-grid">
+                    
+                    <div class="card full-width">
+                        
+                        <div class="profile-banner">
+                            <img src="capa.jpg" alt="Imagem da Categoria 0" loading="lazy">
+                        </div>
+                        
+                        <div class="card-body profile-card-body">
+                            
+                            <img src="perfil.jpg" alt="Foto de Perfil do Candidato" class="profile-pic">
+                            
+                            <h3 class="profile-name">Elias Jabbour</h3>                            
+                            <p>🌎 Geógrafo, prof. @uerj.oficial</p>
+                            <p>🏛 Presidente do @ipp.riodejaneiro | Antes: @ndb_int</p>
+                             
+                        </div>
+
+                    
+                    </div>
+
+                    <div class="card full-width">
+                        <div class="card-header"> <h3>Liderança e Marca Política</h3> </div>
+                        <div class="card-body">
+                            <p>Marcas Políticas são representações que seguem padrões identificáveis, permitindo que atores e projetos políticos sejam distinguidos <a href="https://www.tandfonline.com/doi/abs/10.1080/15377857.2019.1680932" target="_blank" rel="noopener noreferrer">(Nielsen, 2017)</a>. Tradicionalmente, o conceito é entendido como uma tríade composta pelo partido, pelas políticas ou ideologias que os orientam e pela liderança política.</p>
+
+<p>Pesquisas recentes, destacam a liderança política como elemento central da marca política <a href="https://www.tandfonline.com/doi/abs/10.1080/15377857.2014.990833" target="_blank" rel="noopener noreferrer">(Speed et al., 2015)</a>. Pela sua capacidade de estabelecer uma comunicação mais direta e responsiva às demandas dos eleitores. Diante da ampliação do papel da liderança na Marca Política, esses pesquisadores as compreendem como Marcas Humanas na Política <a href="https://www.tandfonline.com/doi/abs/10.1080/15377857.2022.2060644" target="_blank" rel="noopener noreferrer">(Ceccobelli e Di Gregorio, 2022;</a> <a href="https://www.tandfonline.com/doi/abs/10.1080/15377857.2025.2491333" target="_blank" rel="noopener noreferrer">Reis Soares et al., 2025)</a>.</p>
+
+<p>Trata-se de uma pessoa que é simultaneamente o eixo central da marca política. São figuras identificáveis e diferenciáveis, que recebem esforços contínuos de comunicação voltados à construção de uma persona alinhada as expectativas e percepções de sua audiência.</p> 
+
+<p>São constituídas de conceitos fundamentais inatos aos seres humanos, como:</p>
+
+<p><strong>(1) Humanização</strong>, relacionada à capacidade de ser percebida como próxima, acessível e semelhante aos eleitores, especialmente em termos de estilo de vida.</p>
+<p><strong>(2) Autenticidade</strong>, associada à capacidade de inspirar confiança e de ser percebida como alguém em quem se pode confiar.</p>
+<p><strong>(3) Competência</strong>, reconhecida quando a liderança é vista como detentora de habilidades, posicionando-se como melhor do que os eleitores em determinados domínios.</p>
+
+<p>Mas não podem ser marcas autônomas devido a dependência do partido e das pautas políticas para que possam assegurar e evidenciar sua autenticidade e competência.</p>
+                        </div>
+                    </div>
+
+
+                </div>
+            </section>
+
+            
+            <section id="Categoria1" class="tab-content">
+                <div class="card full-width">
+                    <div class="card-header"><h3>Análise de Conteúdo</h3></div>
+                    <div class="card-body">
+                        <p>A análise qualitativa de conteúdo é um método sistemático e teórico empírico <a href="https://uk.sagepub.com/en-gb/eur/qualitative-content-analysis/book269922" target="_blank" rel="noopener noreferrer">(Mayring, 2021)</a>.  Aplicado nesta pesquisa para examinar e identificar relações entre as postagens e a recepção da audiência. Através da análise de conteúdo visual <a href="https://sk.sagepub.com/book/mono/visual-methodologies-5e/back-matter/s9781036231576.i1626" target="_blank" rel="noopener noreferrer">(Rose, 2016)<a/>, classificamos iterativamente as postagens <a href="https://www.emerald.com/ejm/article-abstract/50/9-10/1789/30022/Heterotopian-selfies-how-social-media-destabilizes?redirectedFrom=fulltext" target="_blank" rel="noopener noreferrer">(Rokka e Canniford, 2016;</a><a href="https://www.tandfonline.com/doi/full/10.1080/10253866.2019.1657099" target="_blank" rel="noopener noreferrer"> Schops et al., 2020)</a>, até atingirmos a saturação, baseados em categorias amplamente discutidas na literatura sobre marcas humanas no ambiente político.</p>
+
+<p>Nesta seção é possível identificar a proporção e distribuição das categorias, conforme as postagens realizadas. Desta forma podemos compreender quais categorias destacam-se através do engajamento da audiência, observando a quantidade dos comentários e curtidas recebidas. Esta informação é relevante, uma vez que a literatura afirma que o sucesso da liderança política está associado a alta performance destas três categorias.</p>
+
+<p>As nuvens de palavras permitem analisar, a partir da frequência de menções, o conteúdo do discurso da liderança política e a repercussão da audiência. Essa comparação possibilita compreender o grau de alinhamento entre aquilo que a liderança comunica e aquilo que sua audiência demanda ou valoriza.</p>
+                    </div>
+                </div>              
+ 
+
+
+<details class="accordion-item accordion-plataforma open">
+    <summary class="accordion-header">Instagram</summary>
+    <div class="accordion-content">
+        <div class="card-grid">
+            <div class="card full-width destaque-grafico">
+                
+                <div class="card-header"><h3>Distribuição de categorias</h3></div>
+                <div class="card-body">
+                    
+                    <div class="chart-container">
+                        <canvas id="graficoCategorias"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card full-width destaque-grafico">
+    <div class="card-header"><h3>Análise de Conteúdo</h3></div>
+                <div class="card-body">
+                    <div class="chart-container">
+        <canvas id="graficoPostagensPorDia"></canvas>
+    </div>
+</div>
+</div>
+
+            
+                            
+                            <!-- CORREÇÃO: card contendo o gráfico de dispersão -->
+                            <div class="card full-width destaque-grafico">
+                                <div class="card-header"><h3>Comentários</h3></div>
+                                <div class="card-body">
+                                    
+                                    <div class="chart-container">
+                                        <canvas id="graficoDispersaoComentarios"></canvas>
+                                    </div>
+
+                                    
+
+                                    
+
+                                        <div class="card full-width">
+    <div class="card-header"><h3>Mais comentadas</h3></div>
+    <div class="card-body lista-mobile" id="container-comentarios-csv">
+        <p>Carregando dados da planilha...</p>
+    </div>
+
+    
+</div>
+</div>
+</div>
+<div class="card full-width destaque-grafico">
+    <div class="card-header"><h3>Curtidas</h3></div>
+    <div class="card-body">
+        
+        <div class="chart-container">
+            <canvas id="graficoDispersaoCurtidas"></canvas>
+        </div>
+        
+
+        <div class="card full-width">
+    <div class="card-header"><h3>Mais curtidas</h3></div>
+    <div class="card-body lista-mobile" id="container-curtidas-csv">
+        <p>Carregando dados da planilha...</p>
+    </div>
+</div>
+</div>
+</div>
+
+<div class="card full-width destaque-grafico">
+<div class="card-header"><h3>Nuvem de palavras</h3></div>
+<div class="card">
+  
+
+  
+
+  <canvas id="wordcloud" width="900" height="520"></canvas>
+
+
+  
+</div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card full-width card-compare">
+    <div class="card-body">
+      <div class="toggle-container">
+    <button id="btnDiscurso" class="active">Discurso</button>
+    <button id="btnAudiencia">Audiência</button>
+  </div>
+    </div>
+  </div>
+                </details>
+            </section>
+                
+            <section id="Categoria2" class="tab-content">
+                <div class="card full-width">
+                    <div class="card-header"><h3>Análise de Sentimentos</h3></div>
+                    <div class="card-body"><p>A análise de sentimento é um procedimento metodológico muito utilizado no marketing para compreender o envolvimento dos consumidores nas mídias sociais. Este método pode explorar opiniões, sentimentos, avaliações, atitudes e emoções na linguagem escrita <a href="https://www.sciencedirect.com/science/article/abs/pii/S0040162516304784" target="_blank" rel="noopener noreferrer">(Kayser e Blind, 2017;</a><a href="https://www.tandfonline.com/doi/full/10.1080/17517575.2019.1599446" target="_blank" rel="noopener noreferrer"> Grover et al., 2019;</a><a href="https://link.springer.com/article/10.1186/s12889-021-11165-1" target="_blank" rel="noopener noreferrer"> Biancovilli et al., 2022;</a><a href="https://www.scielo.br/j/dados/a/KyX4jrLF7XhqSzLyjjCRDGJ/?format=html&lang=pt" target="_blank" rel="noopener noreferrer"> Oliveira, 2023)</a>. 
+                        
+                        <p>Nesta pesquisa, utilizamos técnicas de <strong>Processamento de Linguagem Natural (PLN)</strong>, implementadas na linguagem de programação <strong>R</strong>, para analisar tanto os textos das legendas das postagens da liderança política quanto os comentários recebidos. Por se tratar de uma versão demonstrativa do estudo, foram coletados os <strong>cem</strong> primeiros comentários de cada publicação.</p>
+
+                        <p>A biblioteca <strong>syuzhet</strong> foi utilizada para classificar o conteúdo textual em oito categorias emocionais — confiança, alegria, surpresa, expectativa, tristeza, medo, raiva e repulsa. A partir dessa classificação, foi possível identificar os sentimentos predominantes nos comentários de cada postagem, permitindo relacionar a recepção do público ao conteúdo divulgado pelo candidato.</p>
+
+<p>Nesta seção, é possível acompanhar a evolução da recepção da audiência em relação às postagens realizadas pela liderança política ao longo do período monitorado. A partir dessa análise, torna-se possível identificar quais conteúdos obtiveram melhor ou pior recepção, em consonância com as demandas e expectativas da audiência.</p></div>
+                </div>
+
+                <details class="accordion-item accordion-plataforma open">
+                    <summary class="accordion-header">Instagram</summary>
+                    <div class="accordion-content">
+                        <div class="card destaque-grafico">
+    <div class="card-header"><h3>Comportamento da Audiência</h3></div>
+    <div class="card-body">
+        <div class="chart-container">
+            <canvas id="graficoSentimentosTempo"></canvas>
+        </div>
+        <p></p>
+    </div>
+</div>
+
+<div class="card full-width destaque-grafico">
+<div class="card-header"><h3>Análise de sentimentos</h3></div>
+<div class="card">
+  <div class="card-body lista-mobile" id="container-sentimentos-csv">
+    <p>Carregando dados da planilha...</p>
+  </div>
+</div>
+</details>
+</section>
+            
+            <section id="Categoria3" class="tab-content">
+                <div class="card full-width">
+                    <div class="card-header"><h3>O Radar da Liderança Política</h3></div>
+                    <div class="card-body"><p>O Radar da Liderança Política surge da necessidade de desenvolvimento de um processo metodológico sistematizado e robusto capaz de oferecer sustentação ao <strong>Triângulo da liderança</strong> <a href="https://www.tandfonline.com/doi/abs/10.1080/15377857.2022.2060644" target="_blank" rel="noopener noreferrer">(Ceccobelli & Di Gregorio, 2022)</a>. A partir da combinação de dois procedimentos metodológicos: (1) Análise de Conteúdo e (2) Análise de Sentimentos, foi possível formular uma abordagem consistente, passível de replicação e validação empírica.</p>
+
+<p>O Radar da Liderança Política permite a visualização de forma clara e sintética do desenvolvimento das lideranças políticas nas mídias sociais. A atualização de caráter gráfico sugere que o equilíbrio entre as três dimensões é a consequência da sua performance. Enquanto, no Triângulo o ponto de equilíbrio é a estrela no centro, que ocorrerá ainda que as dimensões tenham desempenhos igualmente ruins. Desvio que não ocorre com a utilização do Radar, uma vez que visualmente o que demonstra o sucesso da liderança é o tamanho do Radar, ou seja, quanto maior for o Radar melhor será o desempenho do candidato. Além disso, o Indicador de Performance Política nas Mídias Sociais (IPPMS) sintetiza o desempenho em uma métrica comparável, permitindo analisar e contrastar o desenvolvimento de diferentes atores políticos.</p>
+<p>Essa metodologia está sendo desenvolvida no âmbito do <strong>IESP-UERJ</strong> e encontra-se atualmente em processo de avaliação pela revista <a href="https://www.tandfonline.com/journals/upcp20" target="_blank" rel="noopener noreferrer">Political Communication</a>, referência internacional na área de comunicação política, como etapa para sua validação e consolidação.</p>
+</div>
+                </div>
+                
+                <details class="accordion-item accordion-plataforma open">
+                    <summary class="accordion-header">Instagram</summary>
+                    <div class="accordion-content">
+
+  <!-- GRID PRINCIPAL: RADAR + PISM -->
+  <div class="card-grid">
+
+    <!-- CARD RADAR -->
+    <div class="card destaque-grafico">
+      <div class="card-header">
+        <h3>O Radar da Liderança Política</h3>
+      </div>
+
+      <div class="card-body">
+        <div class="chart-container-radar">
+          <canvas id="graficoRadar"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD PISM -->
+    <div class="card destaque-grafico">
+      <div class="card-header">
+        <h3>IPPMS</h3>
+      </div>
+
+      <div class="card-body">
+        <div class="pism-vertical-wrapper">
+          <div class="pism-scale">
+            <span class="scale-top">1</span>
+            <span class="scale-bottom">0</span>
+          </div>
+
+          <div class="pism-bar-vertical">
+            <div id="indicatorDaniel" class="marker-vertical daniel"></div>
+            <div id="indicatorLuisa"
+                 class="marker-vertical luisa"
+                 style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- FIM GRID -->
+
+  <!-- CARD DISCRETO: COMPARAÇÃO -->
+  <div class="card full-width card-compare">
+    <div class="card-body">
+        <p><strong>Nikolas Ferreira</strong></p>
+        <p>A escolha do perfil de Nikolas Ferreira como referência comparativa em relação ao candidato monitorado Elias Jabbour justifica-se por sua relevância eleitoral e digital no cenário político brasileiro recente. Nas eleições de 2022, Nikolas Ferreira foi o deputado federal mais votado do país, com aproximadamente 1,47 milhão de votos, consolidando-se como uma das principais lideranças emergentes de sua geração.
+
+<p>Além do desempenho eleitoral, o parlamentar tem se destacado pelo forte engajamento nas mídias sociais. Em 2025, figurou entre os políticos brasileiros mais influentes na internet, tornando-se o segundo perfil político mais seguido no Instagram, com cerca de 21,6 milhões de seguidores em fevereiro de 2026. Esse crescimento contínuo e consistente nas mídias, especialmente no Instagram, torna seu perfil um parâmetro para análises comparativas de alcance, engajamento e posicionamento político.</p>
+
+<p>Assim, a adoção do perfil de Nikolas Ferreira permite estabelecer um benchmark objetivo de desempenho digital. Ressalta-se que a metodologia pode ser aplicada a outros candidatos, conforme a necessidade, o contexto eleitoral e a identificação de adversários diretos do candidato investigado.</p>
+      <label class="checkbox-compare">
+        <input type="checkbox" id="toggleLuisa">
+        Comparar com <strong>Nikolas Ferreira</strong>
+      </label>
+    </div>
+  </div>
+
+</div>
+
+            </details>
+        </section>
+        
+        <section id="Categoria4" class="tab-content">
+                <div class="card full-width">
+                    <div class="card-header"><h3>Avaliação Técnica</h3></div>
+                    <div class="card-body"><p>A avaliação técnica consiste na identificação e sinalização de aspectos estratégicos relevantes para o aprimoramento do posicionamento da marca política nas mídias sociais, considerando os anseios, expectativas e padrões de engajamento da audiência monitorados ao longo do período analisado. A partir dessa leitura sistemática, torna-se possível orientar ajustes na comunicação política, de modo a fortalecer a coerência entre o discurso da liderança e as demandas manifestadas pelo público.</p></div>
+                </div>
+
+                <details class="accordion-item accordion-plataforma open">
+                    <summary class="accordion-header">Instagram</summary>
+                    <div class="accordion-content"> 
+                        <div class="card-grid">
+                            <div class="card">
+                                <div class="card-header"><h3>Análise Técnica</h3></div>
+                                <div class="card-body">
+                                    <p>Avaliação (...)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div> 
+                </details>
+            </section>
+            <footer class="footer">
+                <div class="footer-info">
+    <div class="footer-profile">
+        <a href="https://vitorreissoares.github.io/profile/"
+           target="_blank"
+           rel="noopener noreferrer">
+    <img src="vitor.jpg" alt="Foto de Vitor Reis Soares" class="footer-avatar">
+    </a>
+
+    <div class="footer-text">
+        <p>
+            <a href="https://vitorreissoares.github.io/profile/"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="footer-link footer-name">
+               Vitor Reis Soares
+            </a>
+        </p>
+
+        <p class="cargo">
+            Doutorando em Ciência Política •
+            <a href="https://www.iesp.uerj.br"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="footer-link">
+               IESP-UERJ
+            </a>
+        </p>
+    </div>
+</div>
+</div>
+
+                <div class="footer-links">
+                    <a href="https://www.linkedin.com/in/vitorreissoares/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                    <a href="https://scholar.google.com/citations?user=0BSfm-wAAAAJ&hl=pt-BR&oi=ao" target="_blank" rel="noopener noreferrer">Google Scholar</a>
+                    <a href="https://github.com/vitorreissoares" target="_blank" rel="noopener noreferrer">Github</a>
+                </div>
+            </footer>           
+
+            
+        </main>
+
+                    
+    </div>
+    
+    <div id="imageLightbox" class="lightbox-overlay">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-image" id="lightboxImageSrc" src="" alt="Imagem Ampliada">
+    </div>
+    
+    <script>
+
+        const coresCategorias = {
+    'Autenticidade': 'rgba(37, 99, 235, 0.85)',
+    'Competência': 'rgba(202, 138, 4, 0.9)',
+    'Humanização': 'rgba(239, 68, 68, 0.85)'
+};
+
+
+        let graficoPostagensPorDiaChart = null;
+
+        let dadosRadarDaniel = null;
+let dadosRadarLuisa = null;
+let mostrarLuisa = false;
+
+        function calcularDadosRadarMarcaHumana(dadosCSV) {
+
+    const mapaCategorias = {
+        Autenticidade: { pos: [], neg: [] },
+        Autoridade: { pos: [], neg: [] }, // vira Competência
+        Humanização: { pos: [], neg: [] }
+    };
+
+    
+    dadosCSV.forEach(item => {
+        const categoria = item.CATEGORIA?.trim();
+        if (!mapaCategorias[categoria]) return;
+
+        const pos = normalizarPercentual(item.POSITIVO);
+        const neg = normalizarPercentual(item.NEGATIVO);
+
+        mapaCategorias[categoria].pos.push(pos);
+        mapaCategorias[categoria].neg.push(neg);
+
+        
+    });
+
+    const media = arr =>
+        arr.length ? +(arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : 0;
+
+    const mediaAutenticidade = media(mapaCategorias.Autenticidade.pos);
+const mediaAutoridade   = media(mapaCategorias.Autoridade.pos);
+const mediaHumanizacao  = media(mapaCategorias.Humanização.pos);
+
+const pismCorreto = +(
+    (mediaAutenticidade + mediaAutoridade + mediaHumanizacao) / 3
+).toFixed(1);
+
+return {
+    positivos: [
+        mediaAutenticidade,
+        mediaAutoridade,
+        mediaHumanizacao
+    ],
+    negativos: [
+        media(mapaCategorias.Autenticidade.neg),
+        media(mapaCategorias.Autoridade.neg),
+        media(mapaCategorias.Humanização.neg)
+    ],
+    pism: pismCorreto
+
+        
+};
+
+const dadosRadar = calcularDadosRadarMarcaHumana(dadosCSV);
+
+const indicador = document.getElementById('indicatorValue');
+
+}
+
+    function prepararSerieHistoricaSentimentos(dadosCSV) {
+
+    const sentimentos = [
+        'CONFIANCA',
+        'FELICIDADE',
+        'EXPECTATIVA',
+        'SURPRESA',
+        'MEDO',
+        'TRISTEZA',
+        'RAIVA',
+        'REPULSA'
+    ];
+
+    const mapaPorData = {};
+
+    dadosCSV.forEach(item => {
+        const data = item.DATA;
+        if (!data) return;
+
+        if (!mapaPorData[data]) {
+            mapaPorData[data] = {};
+            sentimentos.forEach(s => {
+                mapaPorData[data][s] = { soma: 0, count: 0 };
+            });
+        }
+
+        sentimentos.forEach(s => {
+            const valor = normalizarPercentual(item[s]);
+            mapaPorData[data][s].soma += valor;
+            mapaPorData[data][s].count += 1;
+        });
+    });
+
+    // Ordena as datas
+    const labels = Object.keys(mapaPorData).sort((a, b) => new Date(a) - new Date(b));
+
+    const series = {};
+    sentimentos.forEach(s => {
+        series[s] = labels.map(data => {
+            const obj = mapaPorData[data][s];
+            return obj.count ? +(obj.soma / obj.count).toFixed(1) : 0;
+        });
+    });
+
+    return { labels, series };
+}
+
+
+    // --- Instância do Gráfico de Barras (Existente) ---
+    let graficoCategoriasChart = null;
+    
+    // --- NOVO: Instância do Gráfico de Radar ---
+    let graficoRadarChart = null;
+
+    // --- NOVOS GRÁFICOS DE DISPERSÃO ---
+    let graficoDispersaoComentariosChart = null;
+    let graficoDispersaoCurtidasChart = null;
+
+    // --- NOVO: GRÁFICO DE SÉRIE HISTÓRICA ---
+    let graficoSentimentosTempoChart = null;
+
+    function criarGraficoCategorias(percentuais, labels) {
+    const ctx = document.getElementById('graficoCategorias');
+    if (!ctx) return;
+
+    if (graficoCategoriasChart) graficoCategoriasChart.destroy();
+
+    graficoCategoriasChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+    label: '% de Distribuição',
+    data: percentuais,
+    backgroundColor: labels.map(label => coresCategorias[label]),
+    hoverBackgroundColor: labels.map(label => coresCategorias[label]),
+    barThickness: 15,
+    categoryPercentage: 0.1,
+    barPercentage: 0.3,
+    borderRadius: 10,
+    borderSkipped: false
+}]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: '#111827',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    cornerRadius: 6,
+                    callbacks: {
+                        label: ctx => ` ${ctx.raw}%`
+                    }
+                },
+                title: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: {
+                        drawBorder: false,
+                        color: 'rgba(209, 213, 219, 0.3)'
+                    },
+                    ticks: {
+                        
+                        color: '#6b7280',
+                        callback: v => v + '%'
+                        
+                    }
+                    
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: {
+                        color: '#111827',
+                        font: { weight: '600' }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function criarGraficoRadar(dadosCSV) {
+    const canvas = document.getElementById('graficoRadar');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    if (window.graficoRadarChart instanceof Chart) {
+        window.graficoRadarChart.destroy();
+    }
+
+    dadosRadarDaniel = calcularDadosRadarMarcaHumana(dadosCSV);
+
+    const gradientBlue = ctx.createLinearGradient(0, 0, 0, 400);
+    gradientBlue.addColorStop(0, 'rgba(54, 162, 235, 0.45)');
+    gradientBlue.addColorStop(1, 'rgba(54, 162, 235, 0.1)');
+
+    const gradientRed = ctx.createLinearGradient(0, 0, 0, 400);
+    gradientRed.addColorStop(0, 'rgba(255, 99, 132, 0.45)');
+    gradientRed.addColorStop(1, 'rgba(255, 99, 132, 0.1)');
+
+    const datasets = [
+  {
+    label: 'Elias – Positivos',
+    data: dadosRadarDaniel.positivos,
+    fill: true,
+    backgroundColor: gradientBlue,
+    borderColor: 'rgba(54, 162, 235, 0.9)',
+    borderWidth: 3,
+    pointRadius: 0,
+    tension: 1
+  }
+];
+
+// 🔴 Luisa só entra se estiver marcada
+if (mostrarLuisa && dadosRadarLuisa) {
+  datasets.push({
+    label: 'Nikolas – Positivos',
+    data: dadosRadarLuisa.positivos,
+    fill: true,
+    backgroundColor: 'rgba(220,38,38,0.15)',
+    borderColor: 'rgba(220,38,38,0.9)',
+    borderWidth: 3,
+    pointRadius: 0,
+    tension: 1
+  });
+}
+
+
+    window.graficoRadarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['A', 'C', 'H'],
+            datasets: datasets
+
+        },
+        options: {
+            layout: { padding: 40 },
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                r: {
+                    min: 0,
+                    max: 100,
+                    grid: {
+                        circular: true,
+                        color: 'rgba(0, 0, 0, 0.15)'
+                    },
+                    angleLines: {
+                        color: 'rgba(0, 0, 0, 0.15)'
+                    },
+                    ticks: {
+                        backdropColor: 'transparent',
+                        color: 'transparent',
+                        font: { size: 0 },
+                        callback: () => ''
+                    },
+                    pointLabels: {
+                        color: '#111',
+                        font: { size: 20, weight: '600' }
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    callbacks: {
+                        title: ctx => ({
+                            A: 'Autenticidade',
+                            C: 'Competência',
+                            H: 'Humanização'
+                        })[ctx[0].label],
+                        label: ctx =>
+                            `${ctx.dataset.label}: ${ctx.formattedValue}%`
+                    }
+                }
+            },
+            animation: { duration: 1800, easing: 'easeOutQuint' }
+        }
+    });
+
+    // 🔥 ANIMAÇÃO DO PISM
+    const indicador = document.getElementById('indicatorValue');
+    if (indicador) {
+        let atual = 0;
+        const alvo = dadosRadarDaniel.pism / 100;
+
+        function animar() {
+            atual += 0.01;
+            if (atual >= alvo) atual = alvo;
+            indicador.innerText = atual.toFixed(5).replace('.', ',');
+            if (atual < alvo) requestAnimationFrame(animar);
+        }
+
+        animar();
+
+        
+    }
+}
+
+// --- NOVO: Função para criar o gráfico de dispersão de comentários ---
+
+
+function criarGraficoDispersaoComentarios(dadosCSV) {
+    const ctx = document.getElementById('graficoDispersaoComentarios');
+    if (!ctx) return;
+
+    if (graficoDispersaoComentariosChart) graficoDispersaoComentariosChart.destroy();
+
+    const dados = prepararDadosDispersaoCSV(dadosCSV, 'N° COMENTÁRIOS');
+
+    graficoDispersaoComentariosChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [
+                {
+                    label: 'Autenticidade',
+                    data: dados.Autenticidade,
+                    backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                    borderColor: '#2563eb',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                },
+                {
+                    label: 'Competência',
+                    data: dados.Competência,
+                    backgroundColor: 'rgba(202, 138, 4, 0.8)',
+                    borderColor: 'rgba(202, 138, 4, 1)',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                },
+                {
+                    label: 'Humanização',
+                    data: dados.Humanização,
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderColor: '#ef4444',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }
+            ]
+        },
+        options: { /* 🔒 TODO O DESIGN PERMANECE IGUAL */ 
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 1000, easing: 'easeOutQuart' },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'day', tooltipFormat: 'dd/MM/yyyy' },
+                    title: { display: true, text: '', color: '#374151', font: { weight: '600' } }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: '', color: '#374151', font: { weight: '600' } }
+                }
+            }
+        }
+    });
+}
+
+
+
+// --- NOVO: Função para criar o gráfico de dispersão de curtidas ---
+
+
+function criarGraficoDispersaoCurtidas(dadosCSV) {
+    const ctx = document.getElementById('graficoDispersaoCurtidas');
+    if (!ctx) return;
+
+    if (graficoDispersaoCurtidasChart) graficoDispersaoCurtidasChart.destroy();
+
+    const dados = prepararDadosDispersaoCSV(dadosCSV, 'LIKES');
+
+    graficoDispersaoCurtidasChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [
+                {
+                    label: 'Autenticidade',
+                    data: dados.Autenticidade,
+                    backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                    borderColor: '#2563eb',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                },
+                {
+                    label: 'Competência',
+                    data: dados.Competência,
+                    backgroundColor: 'rgba(202, 138, 4, 0.8)',
+                    borderColor: 'rgba(202, 138, 4, 1)',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                },
+                {
+                    label: 'Humanização',
+                    data: dados.Humanização,
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderColor: '#ef4444',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }
+            ]
+        },
+        options: { /* 🔒 DESIGN ORIGINAL PRESERVADO */ 
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 1000, easing: 'easeOutQuart' },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'day', tooltipFormat: 'dd/MM/yyyy' },
+                    title: { display: true, text: '', color: '#374151', font: { weight: '600' } }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: '', color: '#374151', font: { weight: '600' } }
+                }
+            }
+        }
+    });
+}
+
+
+
+// ========================================================================
+// --- SUBSTITUA TODO O BLOCO A PARTIR DAQUI ---
+// ========================================================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        const navItems = document.querySelectorAll('.nav-item');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        navItems.forEach(navItem => {
+            navItem.addEventListener('click', (event) => {
+                event.preventDefault(); 
+                const targetId = navItem.getAttribute('data-target');
+                
+                navItems.forEach(item => item.classList.remove('active'));
+                navItem.classList.add('active');
+                
+                tabContents.forEach(content => content.style.display = 'none');
+                
+                const targetContent = document.getElementById(targetId);
+                
+                // --- INÍCIO DO BLOCO CORRIGIDO ---
+                if (targetContent) {
+                    targetContent.style.display = 'block';
+
+                    // --- ATUALIZAÇÃO AQUI ---
+                    if (targetId === 'Categoria1') {
+                        
+                        criarGraficoDispersaoComentarios(results.data);
+                        criarGraficoDispersaoCurtidas(results.data);
+                        criarGraficoPostagensPorDia(dadosCSVGlobal);
+
+                        
+                        // --- MOVIDO PARA AQUI ---
+                        if (!nuvensIniciadas) {
+                            iniciarNuvemDePalavras();
+                            nuvensIniciadas = true; // (Corrigi o typo aqui também)
+                        }
+                    } 
+                    // ADICIONE ESTE BLOCO
+                    if (targetId === 'Categoria2') {
+    criarGraficoSentimentosTempo(dadosCSVGlobal);
+    criarListaSentimentos(dadosCSVGlobal);
+}
+                    // FIM DO BLOCO ADICIONADO
+
+                    // --- NOVO: Gatilho para o gráfico de radar ---
+                    if (targetId === 'Categoria3') {
+                        criarGraficoRadar(dadosCSVGlobal);
+                    }
+                    // --- FIM DA ATUALIZAÇÃO ---
+                    
+                } // <-- A CHAVE QUE FECHA 'if (targetContent)' VEM AQUI, DEPOIS DE TUDO.
+                // --- FIM DO BLOCO CORRIGIDO ---
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+        
+        // Também inicializa gráficos caso a aba já esteja visível ao carregar
+        const activeTab = document.querySelector('.nav-item.active');
+        
+        // --- INÍCIO DO SEGUNDO BLOCO CORRIGIDO ---
+        if (activeTab) {
+            const startId = activeTab.getAttribute('data-target');
+            
+            if (startId === 'Categoria1') {
+                
+                criarGraficoDispersaoComentarios(results.data);
+                criarGraficoDispersaoCurtidas(results.data);
+                criarGraficoPostagensPorDia(dadosCSVGlobal);
+
+
+                // --- MOVIDO PARA AQUI ---
+                if (!nuvensIniciadas) {
+                    iniciarNuvemDePalavras();
+                    nuvensIniciadas = true;
+                }
+            } 
+            
+            // ADICIONE ESTE BLOCO
+            if (startId === 'Categoria2') {
+    criarGraficoSentimentosTempo(dadosCSVGlobal);
+    criarListaSentimentos(dadosCSVGlobal);
+}
+            // FIM DO BLOCO ADICIONADO
+            
+            if (startId === 'Categoria3') {
+                criarGraficoRadar(dadosCSVGlobal);
+            }
+        }
+        // --- FIM DO SEGUNDO BLOCO CORRIGIDO ---
+        
+        
+        // --- LÓGICA DO LIGHTBOX (Existente, sem alterações) ---
+        const lightbox = document.getElementById('imageLightbox');
+        const lightboxImg = document.getElementById('lightboxImageSrc');
+        const closeBtn = document.querySelector('.lightbox-close');
+
+        if (lightbox && lightboxImg && closeBtn) {
+            
+            const contentImages = document.querySelectorAll('.main-content img');
+
+contentImages.forEach(img => {
+    if (
+        !img.src.endsWith('.gif') &&
+        !img.classList.contains('profile-pic') &&
+        !img.classList.contains('footer-avatar')   // 👈 ADICIONE ISSO
+    ) {
+        img.addEventListener('click', () => {
+            lightboxImg.src = img.src;
+            lightbox.classList.add('show');
+        });
+    }
+});
+
+            const closeLightbox = () => {
+                lightbox.classList.remove('show'); 
+                setTimeout(() => { lightboxImg.src = ''; }, 300); 
+            };
+
+            closeBtn.addEventListener('click', closeLightbox); 
+            
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) { 
+                    closeLightbox();
+                }
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+                    closeLightbox();
+                }
+            });
+        }
+        
+        
+        // --- LÓGICA DE COMPARTILHAMENTO (Existente, sem alterações) ---
+        const shareBtn = document.getElementById('mobileShareBtn');
+        
+        if (shareBtn) {
+            shareBtn.addEventListener('click', async () => {
+                
+                const shareData = {
+                    title: 'Dashboard Noboa 2023',
+                    text: 'Comportamento político nas mídias sociais.',
+                    url: window.location.href 
+                };
+                
+                if (navigator.share) {
+                    try {
+                        await navigator.share(shareData);
+                        console.log('Conteúdo compartilhado com sucesso!');
+                    } catch (err) {
+                        console.error('Erro ao compartilhar:', err);
+                    }
+                } else {
+                    alert('O compartilhamento não é suportado neste navegador.');
+                }
+            });
+        }
+        
+    });
+
+    
+
+// SUBSTITUA A FUNÇÃO 'criarGraficoSentimentosTempo' INTEIRA POR ESTA
+function criarGraficoSentimentosTempo(dadosCSV) {
+    const ctx = document.getElementById('graficoSentimentosTempo');
+    if (!ctx) return;
+
+    if (window.graficoSentimentosTempoChart instanceof Chart) {
+        window.graficoSentimentosTempoChart.destroy();
+    }
+
+    const { labels, series } = prepararSerieHistoricaSentimentos(dadosCSV);
+
+    window.graficoSentimentosTempoChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Confiança',
+                    data: series.CONFIANCA,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Felicidade',
+                    data: series.FELICIDADE,
+                    borderColor: '#16a34a',
+                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Expectativa',
+                    data: series.EXPECTATIVA,
+                    borderColor: '#f97316',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Surpresa',
+                    data: series.SURPRESA,
+                    borderColor: '#facc15',
+                    backgroundColor: 'rgba(250, 204, 21, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Medo',
+                    data: series.MEDO,
+                    borderColor: '#a855f7',
+                    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Tristeza',
+                    data: series.TRISTEZA,
+                    borderColor: '#64748b',
+                    backgroundColor: 'rgba(100, 116, 139, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Raiva',
+                    data: series.RAIVA,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Repulsa',
+                    data: series.REPULSA,
+                    borderColor: '#713f12',
+                    backgroundColor: 'rgba(113, 63, 18, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: v => v + '%',
+                        color: '#6b7280'
+                    },
+                    grid: {
+                        color: 'rgba(209, 213, 219, 0.3)'
+                    }
+                },
+                x: {
+                    ticks: { color: '#6b7280' },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#374151',
+                        usePointStyle: true,
+                        boxWidth: 8
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: ctx =>
+                            ` ${ctx.dataset.label}: ${ctx.raw}%`
+                    }
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            }
+        }
+    });
+}
+
+// --- 1. LÓGICA DE NAVEGAÇÃO (TABS) - Apenas uma vez ---
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        this.classList.add('active');
+        const target = this.getAttribute('data-target');
+        document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+        const targetElement = document.getElementById(target);
+        if (targetElement) targetElement.style.display = 'block';
+    });
+});
+
+// --- 2. CARREGAMENTO DO CSV ---
+function carregarDadosCSV() {
+    console.log("Iniciando carregamento do CSV...");
+    Papa.parse("dados.csv", {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+
+    dadosCSVGlobal = results.data; // ✅ AGORA OS DADOS EXISTEM GLOBALMENTE
+
+    gerarListaGenerica(dadosCSVGlobal, 'container-comentarios-csv', 'N° COMENTÁRIOS', 'coment');
+    gerarListaGenerica(dadosCSVGlobal, 'container-curtidas-csv', 'LIKES', 'curt');
+
+    gerarGraficoCategoriasCSV(dadosCSVGlobal);
+
+    criarGraficoDispersaoComentarios(dadosCSVGlobal);
+    criarGraficoDispersaoCurtidas(dadosCSVGlobal);
+
+    criarGraficoPostagensPorDia(dadosCSVGlobal);
+
+
+    // 🔥 SE A ABA 2 JÁ ESTIVER ABERTA
+    const abaAtiva = document.querySelector('.nav-item.active')?.getAttribute('data-target');
+    if (abaAtiva === 'Categoria2') {
+        criarGraficoSentimentosTempo(dadosCSVGlobal);
+        criarListaSentimentos(dadosCSVGlobal);
+    }
+},
+
+
+        error: function(error) {
+            console.error("Erro ao carregar CSV:", error);
+            alert("Erro ao carregar o arquivo dados.csv. Verifique o console.");
+        }
+    });
+}
+
+function prepararDadosDispersaoCSV(dados, colunaValor) {
+
+    const mapaCategorias = {
+        "Autenticidade": "Autenticidade",
+        "Autoridade": "Competência",
+        "Humanização": "Humanização"
+    };
+
+    const resultado = {
+        Autenticidade: [],
+        Competência: [],
+        Humanização: []
+    };
+
+    dados.forEach(item => {
+        const categoriaOriginal = item.CATEGORIA?.trim();
+        const categoria = mapaCategorias[categoriaOriginal];
+        const data = item.DATA;
+        const valor = parseInt(item[colunaValor]);
+
+        if (categoria && data && !isNaN(valor)) {
+            resultado[categoria].push({
+                x: data,
+                y: valor
+            });
+        }
+    });
+
+    return resultado;
+}
+
+
+function gerarGraficoCategoriasCSV(dados) {
+
+    const contagem = {
+        Autenticidade: 0,
+        Autoridade: 0,
+        Humanização: 0
+    };
+
+    dados.forEach(item => {
+        const cat = item.CATEGORIA?.trim();
+        if (contagem.hasOwnProperty(cat)) {
+            contagem[cat]++;
+        }
+    });
+
+    const total = Object.values(contagem).reduce((a, b) => a + b, 0);
+
+    // 🔥 monta estrutura ordenável
+    const categoriasOrdenadas = Object.entries(contagem)
+        .map(([nome, qtd]) => ({
+    nome: nome === 'Autoridade' ? 'Competência' : nome,
+    valor: total > 0 ? Math.round((qtd / total) * 100) : 0
+}))
+        .sort((a, b) => b.valor - a.valor); // DESC
+
+    const labels = categoriasOrdenadas.map(c => c.nome);
+    const percentuais = categoriasOrdenadas.map(c => c.valor);
+
+    criarGraficoCategorias(percentuais, labels);
+}
+
+
+// --- 3. FUNÇÃO ÚNICA PARA GERAR AMBAS AS LISTAS (Com coluna Observação) ---
+function gerarListaGenerica(dados, containerId, colunaMetrica, prefixoId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const categoriasDesejadas = [
+    { csv: "Autenticidade", label: "Autenticidade" },
+    { csv: "Autoridade", label: "Competência" },
+    { csv: "Humanização", label: "Humanização" }
+];
+
+    let htmlFinal = "";
+
+    categoriasDesejadas.forEach((categoria, index) => {
+        const itensFiltrados = dados
+            .filter(item => item.CATEGORIA && item.CATEGORIA.trim() === categoria.csv)
+            .sort((a, b) => (parseInt(b[colunaMetrica]) || 0) - (parseInt(a[colunaMetrica]) || 0));
+
+        if (itensFiltrados.length > 0) {
+            const ID_DOM = `tabela-${prefixoId}-${index}`;
+            const LIMITE = 3;
+
+            htmlFinal += `
+                <div class="categoria-grupo">
+                    <h4 class="categoria-titulo-slug">${categoria.label}</h4>
+                    <div class="categoria-container">
+                        <div class="tabela-scroll">
+                        <table class="tabela-dados" id="${ID_DOM}">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>${prefixoId === 'coment' ? 'Comentários' : 'Curtidas'}</th>
+                                    <th>Análise</th> <th>Link</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${itensFiltrados.map((item, idx) => {
+    const classeOculta = idx >= LIMITE ? 'linha-oculta' : '';
+    const valorExibido = item[colunaMetrica] || 0;
+    const obs = item["OBSERVACAO"] || "Sem observações para este post.";
+    const link = item["LINK POSTAGEM"] || item["LINK"] || "#";
+    const rowId = `${prefixoId}-obs-${index}-${idx}`; // ID único para a gaveta
+
+    return `
+    <tr class="${classeOculta}" style="${idx >= LIMITE ? 'display:none;' : ''}">
+        <td>${item.DATA || '-'}</td>
+        <td><span class="badge-comentarios">${valorExibido}</span></td>
+        <td>
+            <button class="btn-gaveta" onclick="toggleGaveta('${rowId}')">
+                <i class="fas fa-eye"></i>
+            </button>
+        </td>
+        <td><a href="${link}" target="_blank" class="btn-ver-post">Ver Post</a></td>
+    </tr>
+    <tr id="${rowId}" class="linha-gaveta" style="display: none;">
+        <td colspan="4">
+            <div class="gaveta-conteudo">
+                <strong>Análise:</strong> ${obs}
+            </div>
+        </td>
+    </tr>`;
+}).join('')}
+                            </tbody>
+                        </table>
+                        </div>
+                        ${itensFiltrados.length > LIMITE ? 
+                            `<button class="btn-expandir" onclick="toggleLinhas('${ID_DOM}', this)">
+                                Ver mais (${itensFiltrados.length - LIMITE}) <i class="fas fa-chevron-down"></i>
+                             </button>` : ''}
+                    </div>
+                </div>`;
+        }
+    });
+
+    container.innerHTML = htmlFinal || "<p>Nenhum dado encontrado.</p>";
+}
+
+// --- 4. FUNÇÃO TOGGLE REVISADA ---
+function toggleLinhas(tabelaId, btn) {
+    const tabela = document.getElementById(tabelaId);
+    const linhasOcultas = tabela.querySelectorAll('.linha-oculta');
+    const estaExpandido = btn.innerText.includes("Ver menos");
+
+    linhasOcultas.forEach(linha => {
+        linha.style.display = estaExpandido ? 'none' : 'table-row';
+    });
+
+    if (estaExpandido) {
+        btn.innerHTML = `Ver mais (${linhasOcultas.length}) <i class="fas fa-chevron-down"></i>`;
+    } else {
+        btn.innerHTML = `Ver menos <i class="fas fa-chevron-up"></i>`;
+    }
+}
+
+// --- 5. INICIALIZAÇÃO ---
+window.onload = function() {
+    carregarDadosCSV();
+};
+
+
+
+function toggleGaveta(id) {
+    const gaveta = document.getElementById(id);
+    const estaAberta = gaveta.style.display === 'table-row';
+    
+    // Opcional: Fecha outras gavetas abertas para manter o foco (minimalismo)
+    // document.querySelectorAll('.linha-gaveta').forEach(g => g.style.display = 'none');
+
+    gaveta.style.display = estaAberta ? 'none' : 'table-row';
+}
+
+function normalizarPercentual(valor) {
+    if (valor === null || valor === undefined) return 0;
+
+    return parseFloat(
+        valor
+            .toString()
+            .replace('%', '')
+            .replace(',', '.')
+            .trim()
+    ) || 0;
+}
+
+function criarListaSentimentos(dadosCSV) {
+    const container = document.getElementById('container-sentimentos-csv');
+    if (!container) return;
+
+    const sentimentos = [
+        { chave: 'CONFIANCA', nome: 'Confiança' },
+        { chave: 'FELICIDADE', nome: 'Felicidade' },
+        { chave: 'EXPECTATIVA', nome: 'Expectativa' },
+        { chave: 'SURPRESA', nome: 'Surpresa' },
+        { chave: 'MEDO', nome: 'Medo' },
+        { chave: 'TRISTEZA', nome: 'Tristeza' },
+        { chave: 'RAIVA', nome: 'Raiva' },
+        { chave: 'REPULSA', nome: 'Repulsa' }
+    ];
+
+    const LIMITE = 3;
+    container.innerHTML = '';
+
+    sentimentos.forEach((sentimento, idxSent) => {
+
+        const itens = dadosCSV
+            .filter(l => l[sentimento.chave] !== undefined && l[sentimento.chave] !== '')
+            .sort(
+                (a, b) =>
+                    normalizarPercentual(b[sentimento.chave]) -
+                    normalizarPercentual(a[sentimento.chave])
+            );
+
+        if (!itens.length) return;
+
+        const tabelaId = `tabela-sent-${idxSent}`;
+
+        let html = `
+        <div class="categoria-grupo">
+            <h4 class="categoria-titulo-slug">${sentimento.nome}</h4>
+            <div class="categoria-container">
+                <div class="tabela-scroll">
+                <table class="tabela-dados" id="${tabelaId}">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>${sentimento.nome}</th>
+                            <th>Análise</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        itens.forEach((item, idx) => {
+            const rowId = `gaveta-sent-${idxSent}-${idx}`;
+            const oculto = idx >= LIMITE ? 'linha-oculta' : '';
+            const display = idx >= LIMITE ? 'display:none;' : '';
+
+            const valor = normalizarPercentual(item[sentimento.chave]);
+
+            html += `
+            <tr class="${oculto}" style="${display}">
+                <td>${item.DATA || '-'}</td>
+                <td>
+                    <span class="badge-comentarios">
+                        ${valor.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+})}%
+                    </span>
+                </td>
+                <td>
+                    <button class="btn-gaveta" onclick="toggleGaveta('${rowId}')">
+                        <i class="fas fa-eye"></i> 
+                    </button>
+                </td>
+                <td>
+                    <a href="${item['LINK POSTAGEM'] || '#'}"
+                       target="_blank"
+                       class="btn-ver-post">
+                        Ver Post
+                    </a>
+                </td>
+            </tr>
+            <tr id="${rowId}" class="linha-gaveta" style="display:none;">
+                <td colspan="4">
+                    <div class="gaveta-conteudo">
+                        <strong>Análise:</strong>
+                        ${item['OBSERVACAO'] || 'Sem observação.'}
+                    </div>
+                </td>
+            </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+                </div>
+                ${itens.length > LIMITE ? `
+                <button class="btn-expandir" onclick="toggleLinhas('${tabelaId}', this)">
+                    Ver mais (${itens.length - LIMITE}) <i class="fas fa-chevron-down"></i>
+                </button>` : ''}
+            </div>
+        </div>
+        `;
+
+        container.innerHTML += html;
+    });
+}
+
+let sentimentosCriados = false;
+
+if (targetId === 'Categoria2' && !sentimentosCriados) {
+    criarGraficoSentimentosTempo(dadosCSVGlobal);
+    criarListaSentimentos(dadosCSVGlobal);
+    sentimentosCriados = true;
+}
+
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.1.1/wordcloud2.min.js"></script>
+
+<script>
+  /* =========================
+   CONFIGURAÇÕES
+========================= */
+const FREQUENCIA_MINIMA = 10;
+
+const stopwords = new Set([
+  "a","à","ao","aos","as","o","os","um","uma","uns","umas", "de","do","da","dos","das","em","no","na","nos","nas",
+  "por","para","com","sem","sobre","entre","até","após", "e","ou","mas","porque","pois","que","se","como",
+  "é","era","foi","são","ser","estar","está","estão","estive", "tem","têm","teve","ter","havia","há",
+  "mais","menos","muito","muita","muitos","muitas", "eu","tu","ele","ela","eles","elas","nós","vocês","me","te","se",
+  "lhe","lhes","meu","minha","meus","minhas","seu","sua","seus","suas","sera","nao","nosso","nossa","nossos","nossas","isso","isto","aquilo","essa","esse","essas","esses",  "vc","vcs","você","vocês","pra","pro","pros","pras","q","pq","porque","porquê","né","tb","tmb","mt","mto","mta","ai","aí","aham","ok","kk","kkkk","rs","rsrs", "todo","toda","todos","todas","já","ainda","também","só","não","sim", "a","al","a los","a las","ante","de","del","desde","durante","en","entre","con","sin","sobre","por","para","y","o","pero","porque","pues","que","como","es","son","era","fue","the","ser","estar","está","están","ha","han","haber","hay","hubo","más","menos","muy","mucho","mucha","muchos","muchas","todo","toda","todos","todas","ya","aún","también","solo","yo","tú","él","ella","ellos","ellas","nosotros","ustedes","me","te","se","le","les","mi","mis","su","sus", "vos","ustedes","pa","pq","xq","jaja","jajaja","jeje","ok","vale","eh","bueno","asi","ahi","acá","allá","oye", "este","esta","estos","estas","eso","esa","aquello"
+]);
+
+const canvas = document.getElementById("wordcloud");
+const tooltip = document.getElementById("tooltip");
+
+const btnDiscurso = document.getElementById("btnDiscurso");
+const btnAudiencia = document.getElementById("btnAudiencia");
+
+/* =========================
+   BOTÕES
+========================= */
+btnDiscurso.addEventListener("click", () => carregarCSV("dados.csv", btnDiscurso));
+btnAudiencia.addEventListener("click", () => carregarCSV("audiencia.csv", btnAudiencia));
+
+function ativarBotao(botaoAtivo) {
+  [btnDiscurso, btnAudiencia].forEach(btn => btn.classList.remove("active"));
+  botaoAtivo.classList.add("active");
+}
+
+/* =========================
+   LEITURA CSV (FETCH)
+========================= */
+function carregarCSV(arquivo, botao) {
+  ativarBotao(botao);
+
+  fetch(arquivo)
+    .then(res => res.text())
+    .then(csv => {
+      Papa.parse(csv, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function (results) {
+          const textos = results.data.flatMap(row => [
+            row.Caption,
+            row["Comment"]
+          ]).filter(Boolean);
+
+          gerarNuvem(textos);
+        }
+      });
+    })
+    .catch(() => alert("Erro ao carregar o arquivo " + arquivo));
+}
+
+/* =========================
+   NUVEM
+========================= */
+function gerarNuvem(textos) {
+  const frequencia = {};
+
+  textos.forEach(texto => {
+
+  // 🔥 CAPTURA EMOJIS
+  const emojis = texto.match(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu);
+  if (emojis) {
+    emojis.forEach(e => {
+      frequencia[e] = (frequencia[e] || 0) + 1;
+    });
+  }
+
+  // 🔹 PROCESSA TEXTO NORMAL
+  texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/g, "") // mantém só letras aqui
+    .split(/\s+/)
+    .forEach(palavra => {
+      if (palavra.length > 2 && !stopwords.has(palavra)) {
+        frequencia[palavra] = (frequencia[palavra] || 0) + 1;
+      }
+    });
+});
+;
+
+const FREQUENCIA_MINIMA = 5;
+
+  const wordData = Object.entries(frequencia)
+    .filter(([_, c]) => c >= FREQUENCIA_MINIMA)
+    .sort((a, b) => b[1] - a[1]);
+
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  WordCloud(canvas, {
+    list: wordData,
+    gridSize: Math.round(5 * window.devicePixelRatio),
+    weightFactor: (size, word) => {
+  if (/\p{Emoji}/u.test(word)) return Math.sqrt(size) * 1;
+  return Math.sqrt(size) * 8;
+},
+    fontFamily: "Georgia, serif",
+    rotateRatio: 0.03,
+    backgroundColor: "#ffffff",
+
+    color: function (word, weight) {
+
+  const paleta = [
+    "#1e3a8a", // azul profundo
+    "#2563eb", // azul
+    "#0ea5e9", // azul claro
+    "#14b8a6", // teal
+    "#059669", // verde
+    "#84cc16", // verde lima
+    "#ca8a04", // amarelo queimado
+    "#f97316", // laranja
+    "#ea580c", // laranja forte
+    "#dc2626", // vermelho
+    "#db2777", // rosa
+    "#7c3aed"  // roxo
+  ];
+
+  // palavras mais relevantes tendem a cores mais fortes
+  if (weight > 45) return "#7c2d12"; // destaque máximo
+  if (weight > 35) return "#991b1b";
+  if (weight > 28) return "#6d28d9";
+
+  // leve aleatoriedade para variar
+  const index = Math.floor(Math.random() * paleta.length);
+  return paleta[index];
+},
+
+    hover: function (item) {
+  if (!item) return;
+
+  // Tooltip nativo do navegador
+  canvas.title = `Menções: ${item[1]}`;
+}
+  });
+}
+
+/* =========================
+   CARREGA PADRÃO
+========================= */
+carregarCSV("dados.csv", btnDiscurso);
+
+document.getElementById('toggleLuisa').addEventListener('change', e => {
+  mostrarLuisa = e.target.checked;
+
+  if (mostrarLuisa && !dadosRadarLuisa) {
+    carregarLuisaCSV();
+  } else {
+    criarGraficoRadar(dadosCSVGlobal);
+    atualizarPISM();
+  }
+});
+
+function carregarLuisaCSV() {
+  Papa.parse('luisa.csv', {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: res => {
+      dadosRadarLuisa = calcularDadosRadarMarcaHumana(res.data);
+      criarGraficoRadar(dadosCSVGlobal);
+      atualizarPISM();
+    }
+  });
+}
+
+// ===== EVITAR SOBREPOSIÇÃO DOS VALORES =====
+
+setTimeout(() => {
+
+  const markerElias = document.getElementById('indicatorDaniel');
+  const markerNikolas = document.getElementById('indicatorLuisa');
+
+  if (!markerElias || !markerNikolas) return;
+
+  const elias = parseFloat(markerElias.dataset.value || 0);
+  const nikolas = parseFloat(markerNikolas.dataset.value || 0);
+
+  markerElias.classList.remove('offset-up','offset-down');
+  markerNikolas.classList.remove('offset-up','offset-down');
+
+  if (Math.abs(elias - nikolas) < 5) {
+      markerElias.classList.add('offset-up');
+      markerNikolas.classList.add('offset-down');
+  }
+
+}, 500);
+
+function animarIndicador(id, valor) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  const normalizado = Math.max(0, Math.min(valor / 100, 1));
+
+  el.style.bottom = (normalizado * 100) + '%';
+  el.setAttribute(
+    'data-value',
+    normalizado.toFixed(3).replace('.', ',')
+  );
+}
+
+
+function atualizarPISM() {
+  animarIndicador('indicatorDaniel', dadosRadarDaniel.pism);
+
+  if (mostrarLuisa && dadosRadarLuisa) {
+    document.getElementById('indicatorLuisa').style.display = 'block';
+    animarIndicador('indicatorLuisa', dadosRadarLuisa.pism);
+  } else {
+    document.getElementById('indicatorLuisa').style.display = 'none';
+  }
+}
+
+
+function prepararPostagensPorDia(dadosCSV) {
+
+    const mapaDatas = {};
+
+    dadosCSV.forEach(item => {
+        const data = item.DATA;
+        if (!data) return;
+
+        const categoriaCSV = item.CATEGORIA?.trim();
+
+        // Mapeia Autoridade → Competência
+        const categoria =
+            categoriaCSV === 'Autoridade'
+                ? 'Competência'
+                : categoriaCSV;
+
+        if (!mapaDatas[data]) {
+            mapaDatas[data] = {
+                Autenticidade: 0,
+                Competência: 0,
+                Humanização: 0
+            };
+        }
+
+        if (mapaDatas[data][categoria] !== undefined) {
+            mapaDatas[data][categoria]++;
+        }
+    });
+
+    const labels = Object.keys(mapaDatas)
+        .sort((a, b) => new Date(a) - new Date(b));
+
+    const dadosPorCategoria = {
+        Autenticidade: [],
+        Competência: [],
+        Humanização: []
+    };
+
+    labels.forEach(data => {
+        dadosPorCategoria.Autenticidade.push(mapaDatas[data].Autenticidade);
+        dadosPorCategoria.Competência.push(mapaDatas[data].Competência);
+        dadosPorCategoria.Humanização.push(mapaDatas[data].Humanização);
+    });
+
+    return { labels, dadosPorCategoria };
+}
+
+
+function criarGraficoPostagensPorDia(dadosCSV) {
+    const ctx = document.getElementById('graficoPostagensPorDia');
+    if (!ctx) return;
+
+    if (graficoPostagensPorDiaChart) {
+        graficoPostagensPorDiaChart.destroy();
+    }
+
+    const { labels, dadosPorCategoria } =
+        prepararPostagensPorDia(dadosCSV);
+
+    graficoPostagensPorDiaChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Autenticidade',
+                    data: dadosPorCategoria.Autenticidade,
+                    backgroundColor: 'rgba(37, 99, 235, 0.85)'
+                },
+                {
+                    label: 'Competência',
+                    data: dadosPorCategoria.Competência,
+                    backgroundColor: 'rgba(202, 138, 4, 0.9)'
+                },
+                {
+                    label: 'Humanização',
+                    data: dadosPorCategoria.Humanização,
+                    backgroundColor: 'rgba(239, 68, 68, 0.85)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        footer: items => {
+                            const total = items.reduce(
+                                (sum, i) => sum + i.raw,
+                                0
+                            );
+                            return `Total no dia: ${total}`;
+                        }
+                    }
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: { display: false },
+                    ticks: { color: '#374151' }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        color: '#6b7280'
+                    },
+                    grid: {
+                        color: 'rgba(209, 213, 219, 0.3)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+indicatorDaniel.dataset.value = dadosRadarDaniel.pism;
+
+if (dadosRadarLuisa) {
+  indicatorLuisa.dataset.value = dadosRadarLuisa.pism;
+}
+
+</script>
+
+
+</body>
+</html>
+
+
+
+
