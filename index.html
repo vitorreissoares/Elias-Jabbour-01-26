@@ -1180,7 +1180,86 @@ canvas {
   transform: translate(-50%, -30%);
 }
 
+/* ===== HEADER DO GRÁFICO ===== */
+.grafico-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
 
+/* ===== BOTÕES PERÍODO ===== */
+.periodo-botoes {
+    display: flex;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 999px;
+}
+
+.periodo-botoes button {
+    border: none;
+    background: transparent;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.periodo-botoes button:hover {
+    background: #e5e7eb;
+}
+
+.periodo-botoes button.active {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+}
+
+.legend-container {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    border: 1px solid var(--border-color);
+    background: white;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.legend-item:hover {
+    background: #f1f5f9;
+}
+
+.legend-item.inactive {
+    opacity: 0.4;
+}
+
+.legend-item .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.grafico-container {
+    position: relative;
+    width: 100%;
+    height: 50vh;     /* 50% da altura da tela */
+    max-height: 500px;
+}
     </style>
 </head>
 
@@ -1410,8 +1489,17 @@ canvas {
                         <div class="card destaque-grafico">
     <div class="card-header"><h3>Comportamento da Audiência</h3></div>
     <div class="card-body">
-        <div class="chart-container">
-            <canvas id="graficoSentimentosTempo"></canvas>
+        <div class="grafico-header">
+    <h3></h3>
+
+    <div class="periodo-botoes">
+        <button data-periodo="1d">1D</button>
+        <button data-periodo="7d">7D</button>
+        <button data-periodo="30d">30D</button>
+        <button data-periodo="completo" class="active">Completo</button>
+    </div>
+</div>
+<div class="grafico-container"><canvas id="graficoSentimentosTempo"></canvas></div>            
         </div>
         <p></p>
     </div>
@@ -2207,123 +2295,159 @@ function criarGraficoSentimentosTempo(dadosCSV) {
         window.graficoSentimentosTempoChart.destroy();
     }
 
-    const { labels, series } = prepararSerieHistoricaSentimentos(dadosCSV);
+    let periodoAtual = 'completo';
 
-    window.graficoSentimentosTempoChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: 'Confiança',
-                    data: series.CONFIANCA,
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    fill: true,
-                    tension: 0.3
+    function filtrarPorPeriodo(dados, periodo) {
+    if (periodo === 'completo') return dados;
+
+    if (!dados.length) return [];
+
+    // 🔥 pega a data mais recente do CSV
+    const datasOrdenadas = dados
+        .map(d => new Date(d.DATA))
+        .sort((a, b) => b - a);
+
+    const dataMaisRecente = datasOrdenadas[0];
+
+    let dias = 0;
+    if (periodo === '1d') dias = 1;
+    if (periodo === '7d') dias = 7;
+    if (periodo === '30d') dias = 30;
+
+    const limite = new Date(dataMaisRecente);
+    limite.setDate(limite.getDate() - dias);
+
+    return dados.filter(item => {
+        const dataItem = new Date(item.DATA);
+        return dataItem >= limite;
+    });
+}
+
+plugins: [{
+  id: 'htmlLegend',
+  afterUpdate(chart) {
+    const legendContainer = document.getElementById('legend-container');
+    legendContainer.innerHTML = '';
+
+    chart.data.datasets.forEach((ds, i) => {
+      const item = document.createElement('button');
+      item.className = 'legend-item';
+      item.innerHTML = `
+        <span class="dot" style="background:${ds.borderColor}"></span>
+        ${ds.label}
+      `;
+
+      item.onclick = () => {
+        chart.toggleDataVisibility(i);
+        item.classList.toggle('inactive');
+        chart.update();
+      };
+
+      legendContainer.appendChild(item);
+    });
+  }
+}]
+
+    function gerarGrafico() {
+
+        const dadosFiltrados = filtrarPorPeriodo(dadosCSV, periodoAtual);
+        const { labels, series } = prepararSerieHistoricaSentimentos(dadosFiltrados);
+
+        const sentimentosConfig = [
+            { chave: 'CONFIANCA', nome: 'Confiança', cor: '#2563eb' },
+            { chave: 'FELICIDADE', nome: 'Felicidade', cor: '#16a34a' },
+            { chave: 'EXPECTATIVA', nome: 'Expectativa', cor: '#f97316' },
+            { chave: 'SURPRESA', nome: 'Surpresa', cor: '#facc15' },
+            { chave: 'MEDO', nome: 'Medo', cor: '#a855f7' },
+            { chave: 'TRISTEZA', nome: 'Tristeza', cor: '#64748b' },
+            { chave: 'RAIVA', nome: 'Raiva', cor: '#ef4444' },
+            { chave: 'REPULSA', nome: 'Repulsa', cor: '#713f12' }
+        ];
+
+        const datasets = sentimentosConfig.map(cfg => ({
+            label: cfg.nome,
+            data: series[cfg.chave],
+            borderColor: cfg.cor,
+            backgroundColor: cfg.cor + '20',
+            tension: 0.3,
+            hidden: true, // 🔥 começa oculto
+            fill: false
+        }));
+
+        window.graficoSentimentosTempoChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: v => v + '%',
+                            color: '#6b7280'
+                        }
+                    }
                 },
-                {
-                    label: 'Felicidade',
-                    data: series.FELICIDADE,
-                    borderColor: '#16a34a',
-                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                },
-                {
-                    label: 'Expectativa',
-                    data: series.EXPECTATIVA,
-                    borderColor: '#f97316',
-                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                },
-                {
-                    label: 'Surpresa',
-                    data: series.SURPRESA,
-                    borderColor: '#facc15',
-                    backgroundColor: 'rgba(250, 204, 21, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                },
-                {
-                    label: 'Medo',
-                    data: series.MEDO,
-                    borderColor: '#a855f7',
-                    backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                },
-                {
-                    label: 'Tristeza',
-                    data: series.TRISTEZA,
-                    borderColor: '#64748b',
-                    backgroundColor: 'rgba(100, 116, 139, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                },
-                {
-                    label: 'Raiva',
-                    data: series.RAIVA,
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                },
-                {
-                    label: 'Repulsa',
-                    data: series.REPULSA,
-                    borderColor: '#713f12',
-                    backgroundColor: 'rgba(113, 63, 18, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: v => v + '%',
-                        color: '#6b7280'
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        onClick: function(e, legendItem, legend) {
+
+                            const index = legendItem.datasetIndex;
+                            const chart = legend.chart;
+                            const dataset = chart.data.datasets[index];
+
+                            dataset.hidden = !dataset.hidden;
+
+                            // remove média antiga se existir
+                            chart.data.datasets = chart.data.datasets.filter(d => !d.mediaRef);
+
+                            if (!dataset.hidden) {
+                                const media = dataset.data.reduce((a,b)=>a+b,0) / dataset.data.length;
+
+                                chart.data.datasets.push({
+                                    label: 'Média ' + dataset.label,
+                                    data: Array(dataset.data.length).fill(media),
+                                    borderColor: dataset.borderColor,
+                                    borderDash: [6,6],
+                                    pointRadius: 0,
+                                    fill: false,
+                                    mediaRef: true
+                                });
+                            }
+
+                            chart.update();
+                        },
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8
+                        }
                     },
-                    grid: {
-                        color: 'rgba(209, 213, 219, 0.3)'
-                    }
-                },
-                x: {
-                    ticks: { color: '#6b7280' },
-                    grid: { display: false }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        color: '#374151',
-                        usePointStyle: true,
-                        boxWidth: 8
-                    }
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    callbacks: {
-                        label: ctx =>
-                            ` ${ctx.dataset.label}: ${ctx.raw}%`
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`
+                        }
                     }
                 }
-            },
-            interaction: {
-                mode: 'index',
-                intersect: false
             }
-        }
+        });
+    }
+
+    gerarGrafico();
+
+    // 🔥 CONTROLE DE BOTÕES DE PERÍODO
+    const botoes = document.querySelectorAll('[data-periodo]');
+    botoes.forEach(btn => {
+        btn.onclick = () => {
+            periodoAtual = btn.getAttribute('data-periodo');
+            window.graficoSentimentosTempoChart.destroy();
+            gerarGrafico();
+        };
     });
 }
 
@@ -2671,13 +2795,6 @@ function criarListaSentimentos(dadosCSV) {
     });
 }
 
-let sentimentosCriados = false;
-
-if (targetId === 'Categoria2' && !sentimentosCriados) {
-    criarGraficoSentimentosTempo(dadosCSVGlobal);
-    criarListaSentimentos(dadosCSVGlobal);
-    sentimentosCriados = true;
-}
 
 </script>
 
