@@ -2202,8 +2202,7 @@ function criarGraficoDispersaoCurtidas(dadosCSV) {
             
             // ADICIONE ESTE BLOCO
             if (startId === 'Categoria2') {
-    criarGraficoSentimentosTempo(dadosCSVGlobal);
-    criarListaSentimentos(dadosCSVGlobal);
+    atualizarSentimentosCompleto();
 }
             // FIM DO BLOCO ADICIONADO
             
@@ -2284,7 +2283,7 @@ contentImages.forEach(img => {
         
     });
 
-    
+let periodoAtualSentimentos = 'completo';    
 
 // SUBSTITUA A FUNÇÃO 'criarGraficoSentimentosTempo' INTEIRA POR ESTA
 function criarGraficoSentimentosTempo(dadosCSV) {
@@ -2321,6 +2320,21 @@ function criarGraficoSentimentosTempo(dadosCSV) {
         const dataItem = new Date(item.DATA);
         return dataItem >= limite;
     });
+}
+
+function atualizarSentimentosCompleto() {
+
+    const dadosFiltrados =
+        filtrarPorPeriodo(dadosCSVGlobal, periodoAtualSentimentos);
+
+    // atualiza gráfico
+    if (window.graficoSentimentosTempoChart)
+        window.graficoSentimentosTempoChart.destroy();
+
+    criarGraficoSentimentosTempo(dadosFiltrados);
+
+    // 🔥 NOVO — atualiza lista
+    criarListaSentimentos(dadosFiltrados);
 }
 
 plugins: [{
@@ -2440,15 +2454,23 @@ plugins: [{
 
     gerarGrafico();
 
-    // 🔥 CONTROLE DE BOTÕES DE PERÍODO
-    const botoes = document.querySelectorAll('[data-periodo]');
-    botoes.forEach(btn => {
-        btn.onclick = () => {
-            periodoAtual = btn.getAttribute('data-periodo');
-            window.graficoSentimentosTempoChart.destroy();
-            gerarGrafico();
-        };
-    });
+    const botoes = document.querySelectorAll('.periodo-botoes button');
+
+botoes.forEach(btn => {
+    btn.onclick = () => {
+
+        // 🔹 remove active de todos
+        botoes.forEach(b => b.classList.remove('active'));
+
+        // 🔹 adiciona no clicado
+        btn.classList.add('active');
+
+        // 🔹 seu código de filtro
+        periodoAtualSentimentos = btn.getAttribute('data-periodo');
+        atualizarSentimentosCompleto();
+    };
+});
+
 }
 
 // --- 1. LÓGICA DE NAVEGAÇÃO (TABS) - Apenas uma vez ---
@@ -3156,10 +3178,3 @@ if (dadosRadarLuisa) {
 
 </body>
 </html>
-
-
-
-
-
-
-
