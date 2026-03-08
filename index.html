@@ -2869,7 +2869,7 @@ function carregarCSV(arquivo, botao) {
         complete: function (results) {
           const textos = results.data.flatMap(row => [
             row.Caption,
-            row["Comment"]
+            row["Comment Text"]
           ]).filter(Boolean);
 
           gerarNuvem(textos);
@@ -3178,3 +3178,4 @@ if (dadosRadarLuisa) {
 
 </body>
 </html>
+
