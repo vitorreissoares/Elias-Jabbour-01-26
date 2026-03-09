@@ -1573,20 +1573,16 @@ canvas {
 
   <!-- CARD DISCRETO: COMPARAÇÃO -->
   <div class="card full-width card-compare">
-    <div class="card-body">
-        <p><strong>Nikolas Ferreira</strong></p>
-        <p>A escolha do perfil de Nikolas Ferreira como referência comparativa em relação ao candidato monitorado Elias Jabbour justifica-se por sua relevância eleitoral e digital no cenário político brasileiro recente. Nas eleições de 2022, Nikolas Ferreira foi o deputado federal mais votado do país, com aproximadamente 1,47 milhão de votos, consolidando-se como uma das principais lideranças emergentes de sua geração.
+<div class="card-body">
 
-<p>Além do desempenho eleitoral, o parlamentar tem se destacado pelo forte engajamento nas mídias sociais. Em 2025, figurou entre os políticos brasileiros mais influentes na internet, tornando-se o segundo perfil político mais seguido no Instagram, com cerca de 21,6 milhões de seguidores em fevereiro de 2026. Esse crescimento contínuo e consistente nas mídias, especialmente no Instagram, torna seu perfil um parâmetro para análises comparativas de alcance, engajamento e posicionamento político.</p>
+<label class="checkbox-compare">
+<input type="checkbox" id="toggleLuisa">
+Comparar com outro candidato!
+</label>
 
-<p>Assim, a adoção do perfil de Nikolas Ferreira permite estabelecer um benchmark objetivo de desempenho digital. Ressalta-se que a metodologia pode ser aplicada a outros candidatos, conforme a necessidade, o contexto eleitoral e a identificação de adversários diretos do candidato investigado.</p>
-      <label class="checkbox-compare">
-        <input type="checkbox" id="toggleLuisa">
-        Comparar com <strong>Nikolas Ferreira</strong>
-      </label>
-    </div>
-  </div>
+<div id="mensagemComparacao" style="margin-top:10px;"></div>
 
+</div>
 </div>
 
             </details>
@@ -2506,6 +2502,9 @@ function carregarDadosCSV() {
 
     criarGraficoPostagensPorDia(dadosCSVGlobal);
 
+    criarGraficoRadar(dadosCSVGlobal);
+    atualizarPISM();
+
 
     // 🔥 SE A ABA 2 JÁ ESTIVER ABERTA
     const abaAtiva = document.querySelector('.nav-item.active')?.getAttribute('data-target');
@@ -2972,27 +2971,60 @@ const FREQUENCIA_MINIMA = 5;
 carregarCSV("dados.csv", btnDiscurso);
 
 document.getElementById('toggleLuisa').addEventListener('change', e => {
+
   mostrarLuisa = e.target.checked;
 
   if (mostrarLuisa && !dadosRadarLuisa) {
+
     carregarLuisaCSV();
+
+    document.getElementById("mensagemComparacao").innerHTML =
+    "Para uma análise mais profunda é fundamental compreender o contexto e os seus adversários, entre em contato para que possamos comparar sua performance com outros candidatos.";
+
   } else {
+
+    document.getElementById("mensagemComparacao").innerHTML = "";
+
     criarGraficoRadar(dadosCSVGlobal);
     atualizarPISM();
+
   }
+
 });
 
 function carregarLuisaCSV() {
-  Papa.parse('luisa.csv', {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: res => {
-      dadosRadarLuisa = calcularDadosRadarMarcaHumana(res.data);
-      criarGraficoRadar(dadosCSVGlobal);
-      atualizarPISM();
-    }
-  });
+
+  fetch('luisa.csv')
+    .then(res => {
+      if (!res.ok) throw new Error("CSV não encontrado");
+      return res.text();
+    })
+    .then(csv => {
+
+      Papa.parse(csv, {
+        header: true,
+        skipEmptyLines: true,
+        complete: res => {
+
+          dadosRadarLuisa = calcularDadosRadarMarcaHumana(res.data);
+
+          document.getElementById("msgComparacaoRadar").innerHTML = "";
+
+          criarGraficoRadar(dadosCSVGlobal);
+          atualizarPISM();
+        }
+      });
+
+    })
+    .catch(() => {
+
+      document.getElementById("msgComparacaoRadar").innerHTML =
+      "Para uma análise mais profunda é fundamental compreender o contexto e os seus adversários, entre em contato para que possamos comparar sua performance com outros candidatos.";
+
+      mostrarLuisa = false;
+      document.getElementById("toggleLuisa").checked = false;
+
+    });
 }
 
 // ===== EVITAR SOBREPOSIÇÃO DOS VALORES =====
